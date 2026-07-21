@@ -74,17 +74,28 @@ function normalizeExpense(expense) {
 
 function mergeState(remoteState, localState) {
   const mergedExpenses = [];
-  const seenExpenseIds = new Set();
+  const mergedExpenseMap = new Map();
 
-  [...(remoteState?.expenses || []), ...(localState?.expenses || [])].forEach((expense) => {
-    const normalizedExpense = normalizeExpense(expense);
-    if (!normalizedExpense.id || seenExpenseIds.has(normalizedExpense.id)) {
+  const localExpenses = (localState?.expenses || []).map((expense) => normalizeExpense(expense));
+  const remoteExpenses = (remoteState?.expenses || []).map((expense) => normalizeExpense(expense));
+
+  localExpenses.forEach((expense) => {
+    if (!expense.id) {
       return;
     }
 
-    seenExpenseIds.add(normalizedExpense.id);
-    mergedExpenses.push(normalizedExpense);
+    mergedExpenseMap.set(expense.id, expense);
   });
+
+  remoteExpenses.forEach((expense) => {
+    if (!expense.id || mergedExpenseMap.has(expense.id)) {
+      return;
+    }
+
+    mergedExpenseMap.set(expense.id, expense);
+  });
+
+  mergedExpenseMap.forEach((expense) => mergedExpenses.push(expense));
 
   return {
     budget: Math.max(Number(remoteState?.budget || 0), Number(localState?.budget || 0)),
