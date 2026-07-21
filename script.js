@@ -56,13 +56,15 @@ function saveLocalState() {
 }
 
 function normalizeExpense(expense) {
+  const derivedMonth = expense?.month || getMonthKeyForDate(expense?.date);
+
   return {
     id: expense?.id || `${Date.now()}-${Math.random()}`,
     title: expense?.title || 'Untitled expense',
     amount: Number(expense?.amount || 0),
     category: expense?.category || 'Other',
     date: expense?.date || new Date().toISOString().split('T')[0],
-    month: expense?.month || getCurrentMonthKey(),
+    month: derivedMonth,
     payer: expense?.payer || expense?.owner || 'AK',
     owner: expense?.payer || expense?.owner || 'AK',
   };
@@ -424,6 +426,9 @@ function resetExpenseForm() {
 }
 
 function populateExpenseForm(expense) {
+  const expenseMonth = expense.month || getMonthKeyForDate(expense.date);
+  selectedMonthKey = expenseMonth;
+
   document.getElementById('title').value = expense.title;
   document.getElementById('amount').value = expense.amount;
   document.getElementById('category').value = expense.category || 'Other';
@@ -431,6 +436,7 @@ function populateExpenseForm(expense) {
   document.getElementById('date').value = expense.date || new Date().toISOString().split('T')[0];
   editingExpenseId = expense.id;
   updateExpenseFormMode();
+  render();
   document.getElementById('title').focus();
 }
 
