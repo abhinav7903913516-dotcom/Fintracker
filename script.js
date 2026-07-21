@@ -6,6 +6,7 @@ const API_BASE = `https://crudcrud.com/api/${API_KEY}/fintracker`;
 const initialState = {
   budget: 0,
   expenses: [],
+  monthlyBudgets: {},
 };
 
 let state = { ...initialState };
@@ -44,6 +45,7 @@ function loadLocalState() {
     return {
       budget: Number(parsed.budget || 0),
       expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+      monthlyBudgets: parsed.monthlyBudgets && typeof parsed.monthlyBudgets === 'object' ? parsed.monthlyBudgets : {},
     };
   } catch (error) {
     console.error('Unable to load saved budget data', error);
@@ -87,6 +89,10 @@ function mergeState(remoteState, localState) {
   return {
     budget: Math.max(Number(remoteState?.budget || 0), Number(localState?.budget || 0)),
     expenses: mergedExpenses,
+    monthlyBudgets: {
+      ...(remoteState?.monthlyBudgets || {}),
+      ...(localState?.monthlyBudgets || {}),
+    },
   };
 }
 
@@ -94,6 +100,7 @@ function normalizeRemoteItem(item) {
   return {
     budget: Number(item?.budget || 0),
     expenses: Array.isArray(item?.expenses) ? item.expenses.map(normalizeExpense) : [],
+    monthlyBudgets: item?.monthlyBudgets && typeof item.monthlyBudgets === 'object' ? item.monthlyBudgets : {},
   };
 }
 
@@ -140,6 +147,7 @@ async function createRemoteState(snapshot = state) {
     body: JSON.stringify({
       budget: snapshot.budget,
       expenses: snapshot.expenses,
+      monthlyBudgets: snapshot.monthlyBudgets,
     }),
   });
 
@@ -168,6 +176,7 @@ async function updateRemoteState(snapshot = state) {
     body: JSON.stringify({
       budget: snapshot.budget,
       expenses: snapshot.expenses,
+      monthlyBudgets: snapshot.monthlyBudgets,
     }),
   });
 
@@ -367,27 +376,32 @@ function renderDashboard(monthExpenses, spent) {
   dailyAverage.textContent = `${formatCurrency(avgPerDay)}/day`;
 }
 
+function getSelectedMonthBudget() {
+  return Number(state.monthlyBudgets?.[selectedMonthKey] || state.budget || 0);
+}
+
 function renderSummary() {
   const monthExpenses = getCurrentMonthExpenses();
   const spent = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const remaining = state.budget - spent;
-  const percent = state.budget > 0 ? Math.min((spent / state.budget) * 100, 100) : 0;
+  const selectedBudget = getSelectedMonthBudget();
+  const remaining = selectedBudget - spent;
+  const percent = selectedBudget > 0 ? Math.min((spent / selectedBudget) * 100, 100) : 0;
 
-  budgetAmount.textContent = formatCurrency(state.budget);
+  budgetAmount.textContent = formatCurrency(selectedBudget);
   spentAmount.textContent = formatCurrency(spent);
   remainingAmount.textContent = formatCurrency(remaining);
   progressBar.style.width = `${percent}%`;
   renderDashboard(monthExpenses, spent);
 
-  if (state.budget <= 0) {
+  if (selectedBudget <= 0) {
     budgetMessage.textContent = 'Set a monthly budget to begin tracking.';
     return;
   }
 
   if (remaining >= 0) {
-    budgetMessage.textContent = `You have ${formatCurrency(remaining)} left for the rest of the month.`;
+    budgetMessage.textContent = `You have ${formatCurrency(remaining)} left for ${getMonthLabel(selectedMonthKey)}.`;
   } else {
-    budgetMessage.textContent = `You are ${formatCurrency(Math.abs(remaining))} over your monthly budget.`;
+    budgetMessage.textContent = `You are ${formatCurrency(Math.abs(remaining))} over your budget for ${getMonthLabel(selectedMonthKey)}.`;
   }
 }
 
@@ -441,7 +455,7 @@ function populateExpenseForm(expense) {
 }
 
 function render() {
-  budgetInput.value = state.budget || '';
+  budgetInput.value = getSelectedMonthBudget() || '';
   renderMonthSelector();
   renderSummary();
   renderExpenses(getCurrentMonthExpenses());
@@ -455,6 +469,7 @@ saveBudgetBtn.addEventListener('click', async () => {
     return;
   }
 
+  state.monthlyBudgets[selectedMonthKey] = nextBudget;
   state.budget = nextBudget;
   await saveState();
   render();
