@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fintracker | Budget Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Personal Budget Tracker</p>
+          <h1>Know where every rupee goes.</h1>
+          <p class="hero-copy">
+            Add expenses, keep them grouped by category, and watch your remaining monthly budget in real time.
+          </p>
+        </div>
+
+        <div class="hero-card">
+          <label for="budget">Monthly budget</label>
+          <div class="budget-row">
+            <span class="currency">₹</span>
+            <input id="budget" type="number" min="0" step="0.01" placeholder="0" />
+            <button id="saveBudgetBtn" type="button">Set budget</button>
+          </div>
+          <p class="hint">Your budget is saved locally in this browser.</p>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="panel form-panel">
+          <h2>Add an expense</h2>
+          <form id="expenseForm">
+            <label>
+              Description
+              <input id="title" name="title" type="text" placeholder="Groceries" required />
+            </label>
+
+            <label>
+              Amount
+              <input id="amount" name="amount" type="number" min="0" step="0.01" placeholder="0" required />
+            </label>
+
+            <label>
+              Category
+              <select id="category" name="category">
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Bills">Bills</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Health">Health</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+
+            <label>
+              Date
+              <input id="date" name="date" type="date" required />
+            </label>
+
+            <button type="submit">Save expense</button>
+          </form>
+        </section>
+
+        <section class="panel summary-panel">
+          <h2>Month snapshot</h2>
+          <div class="summary-cards">
+            <article class="summary-card budget-card">
+              <span class="card-label">Budget</span>
+              <strong id="budgetAmount">₹0.00</strong>
+            </article>
+            <article class="summary-card spent-card">
+              <span class="card-label">Spent</span>
+              <strong id="spentAmount">₹0.00</strong>
+            </article>
+            <article class="summary-card remaining-card">
+              <span class="card-label">Remaining</span>
+              <strong id="remainingAmount">₹0.00</strong>
+            </article>
+          </div>
+
+          <div class="progress-shell" aria-label="Budget progress">
+            <div id="progressBar"></div>
+          </div>
+          <p id="budgetMessage" class="budget-message">Set a monthly budget to begin tracking.</p>
+        </section>
+      </main>
+
+      <section class="panel dashboard-panel">
+        <div class="section-header">
+          <h2>Dashboard</h2>
+          <span class="pill">This month</span>
+        </div>
+        <div class="dashboard-grid">
+          <div class="dashboard-card">
+            <h3>Spend by category</h3>
+            <div id="categoryBreakdown" class="category-list"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Highlights</h3>
+            <ul class="highlight-list">
+              <li>
+                <span>Top category</span>
+                <strong id="topCategory">—</strong>
+              </li>
+              <li>
+                <span>Biggest expense</span>
+                <strong id="biggestExpense">—</strong>
+              </li>
+              <li>
+                <span>Average per day</span>
+                <strong id="dailyAverage">—</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel list-panel">
+        <div class="section-header">
+          <h2>This month's expenses</h2>
+          <button id="clearExpensesBtn" class="ghost" type="button">Clear month</button>
+        </div>
+        <div id="expenseList" class="expense-list"></div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
