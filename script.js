@@ -11,6 +11,7 @@ const initialState = {
 let state = { ...initialState };
 let remoteStateId = localStorage.getItem(REMOTE_ID_KEY);
 let editingExpenseId = null;
+let selectedMonthKey = getCurrentMonthKey();
 
 const budgetInput = document.getElementById('budget');
 const saveBudgetBtn = document.getElementById('saveBudgetBtn');
@@ -29,6 +30,8 @@ const topCategory = document.getElementById('topCategory');
 const biggestExpense = document.getElementById('biggestExpense');
 const dailyAverage = document.getElementById('dailyAverage');
 const monthlyHistoryList = document.getElementById('monthlyHistoryList');
+const viewMonthSelect = document.getElementById('viewMonthSelect');
+const expensePieChart = document.getElementById('expensePieChart');
 
 function loadLocalState() {
   try {
@@ -60,7 +63,8 @@ function normalizeExpense(expense) {
     category: expense?.category || 'Other',
     date: expense?.date || new Date().toISOString().split('T')[0],
     month: expense?.month || getCurrentMonthKey(),
-    owner: expense?.owner || 'You',
+    payer: expense?.payer || expense?.owner || 'AK',
+    owner: expense?.payer || expense?.owner || 'AK',
   };
 }
 
@@ -229,14 +233,17 @@ function getMonthKeyForDate(dateValue) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function getExpensesForMonth(monthKey) {
+  return state.expenses.filter((expense) => (expense.month || getMonthKeyForDate(expense.date)) === monthKey);
+}
+
 function getCurrentMonthExpenses() {
-  const monthKey = getCurrentMonthKey();
-  return state.expenses.filter((expense) => expense.month === monthKey);
+  return getExpensesForMonth(selectedMonthKey);
 }
 
 function renderExpenses(items) {
   if (!items.length) {
-    expenseList.innerHTML = '<div class="empty-state">No expenses logged for this month yet.</div>';
+    expenseList.innerHTML = '<div class="empty-state">No expenses logged for this selected month yet.</div>';
     return;
   }
 
@@ -248,7 +255,7 @@ function renderExpenses(items) {
         <article class="expense-item">
           <div class="expense-meta">
             <span class="expense-title">${expense.title}</span>
-            <span class="expense-details">${expense.category} • ${expense.owner || 'You'} • ${new Date(expense.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            <span class="expense-details">${expense.category} • ${expense.payer || expense.owner || 'AK'} • ${new Date(expense.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
           </div>
           <div class="expense-meta">
             <span class="expense-amount">${formatCurrency(expense.amount)}</span>
@@ -319,30 +326,38 @@ function renderDashboard(monthExpenses, spent) {
   const biggestEntry = [...monthExpenses].sort((a, b) => b.amount - a.amount)[0];
   const daysPassed = Math.max(new Date().getDate(), 1);
   const avgPerDay = spent / daysPassed;
+  const colors = ['#29b6f6', '#7c4dff', '#39d98a', '#ff6b6b', '#f5b942', '#ff8a65', '#90caf9'];
 
   if (!sortedCategories.length) {
     categoryBreakdown.innerHTML = '<div class="empty-state">Add expenses to see category trends.</div>';
+    expensePieChart.style.background = 'rgba(255, 255, 255, 0.06)';
     topCategory.textContent = '—';
     biggestExpense.textContent = '—';
     dailyAverage.textContent = formatCurrency(0);
     return;
   }
 
+  const totalValue = sortedCategories.reduce((sum, [, value]) => sum + value, 0);
+  let startAngle = 0;
+  const segmentStyles = sortedCategories.map(([category, value], index) => {
+    const angle = totalValue > 0 ? (value / totalValue) * 360 : 0;
+    const endAngle = startAngle + angle;
+    const style = `${colors[index % colors.length]} ${startAngle}deg ${endAngle}deg`;
+    startAngle = endAngle;
+    return style;
+  });
+
+  expensePieChart.style.background = `conic-gradient(${segmentStyles.join(', ')})`;
   categoryBreakdown.innerHTML = sortedCategories
-    .map(([category, value]) => {
-      const percent = spent > 0 ? (value / spent) * 100 : 0;
-      return `
-        <div class="category-item">
-          <div class="category-row">
-            <span>${category}</span>
-            <strong>${formatCurrency(value)}</strong>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill" style="width: ${percent}%"></div>
-          </div>
+    .map(([category, value], index) => `
+      <div class="category-item">
+        <div class="category-label">
+          <span class="category-dot" style="background:${colors[index % colors.length]}"></span>
+          <span>${category}</span>
         </div>
-      `;
-    })
+        <strong>${formatCurrency(value)}</strong>
+      </div>
+    `)
     .join('');
 
   topCategory.textContent = topEntry ? topEntry[0] : '—';
@@ -374,6 +389,27 @@ function renderSummary() {
   }
 }
 
+function renderMonthSelector() {
+  const months = Array.from(
+    new Set([
+      ...state.expenses.map((expense) => expense.month || getMonthKeyForDate(expense.date)),
+      selectedMonthKey,
+      getCurrentMonthKey(),
+    ]),
+  ).sort((a, b) => b.localeCompare(a));
+
+  viewMonthSelect.innerHTML = months
+    .map((monthKey) => `
+      <option value="${monthKey}" ${monthKey === selectedMonthKey ? 'selected' : ''}>${getMonthLabel(monthKey)}</option>
+    `)
+    .join('');
+
+  if (!months.includes(selectedMonthKey)) {
+    selectedMonthKey = getCurrentMonthKey();
+    viewMonthSelect.value = selectedMonthKey;
+  }
+}
+
 function updateExpenseFormMode() {
   saveExpenseBtn.textContent = editingExpenseId ? 'Save changes' : 'Save expense';
   cancelEditBtn.style.display = editingExpenseId ? 'inline-flex' : 'none';
@@ -383,7 +419,7 @@ function resetExpenseForm() {
   editingExpenseId = null;
   expenseForm.reset();
   document.getElementById('date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('owner').value = 'You';
+  document.getElementById('payer').value = 'AK';
   updateExpenseFormMode();
 }
 
@@ -391,7 +427,7 @@ function populateExpenseForm(expense) {
   document.getElementById('title').value = expense.title;
   document.getElementById('amount').value = expense.amount;
   document.getElementById('category').value = expense.category || 'Other';
-  document.getElementById('owner').value = expense.owner || 'You';
+  document.getElementById('payer').value = expense.payer || expense.owner || 'AK';
   document.getElementById('date').value = expense.date || new Date().toISOString().split('T')[0];
   editingExpenseId = expense.id;
   updateExpenseFormMode();
@@ -400,6 +436,7 @@ function populateExpenseForm(expense) {
 
 function render() {
   budgetInput.value = state.budget || '';
+  renderMonthSelector();
   renderSummary();
   renderExpenses(getCurrentMonthExpenses());
   renderMonthlyHistory();
@@ -428,6 +465,7 @@ expenseForm.addEventListener('submit', async (event) => {
   }
 
   const nextMonth = getMonthKeyForDate(payload.date);
+  selectedMonthKey = nextMonth;
 
   if (editingExpenseId) {
     const existingExpense = state.expenses.find((expense) => expense.id === editingExpenseId);
@@ -435,7 +473,8 @@ expenseForm.addEventListener('submit', async (event) => {
       existingExpense.title = payload.title.trim();
       existingExpense.amount = amount;
       existingExpense.category = payload.category;
-      existingExpense.owner = payload.owner || 'You';
+      existingExpense.payer = payload.payer || payload.owner || 'AK';
+      existingExpense.owner = existingExpense.payer;
       existingExpense.date = payload.date;
       existingExpense.month = nextMonth;
     }
@@ -445,7 +484,8 @@ expenseForm.addEventListener('submit', async (event) => {
       title: payload.title.trim(),
       amount,
       category: payload.category,
-      owner: payload.owner || 'You',
+      payer: payload.payer || payload.owner || 'AK',
+      owner: payload.payer || payload.owner || 'AK',
       date: payload.date,
       month: nextMonth,
     };
@@ -484,14 +524,24 @@ expenseList.addEventListener('click', async (event) => {
   render();
 });
 
+viewMonthSelect.addEventListener('change', () => {
+  selectedMonthKey = viewMonthSelect.value;
+  render();
+});
+
+const dateInput = document.getElementById('date');
+dateInput.addEventListener('change', () => {
+  selectedMonthKey = getMonthKeyForDate(dateInput.value);
+  render();
+});
+
 clearExpensesBtn.addEventListener('click', async () => {
-  const confirmed = window.confirm('Remove all expenses for this month?');
+  const confirmed = window.confirm('Remove all expenses for the selected month?');
   if (!confirmed) {
     return;
   }
 
-  const monthKey = getCurrentMonthKey();
-  state.expenses = state.expenses.filter((expense) => expense.month !== monthKey);
+  state.expenses = state.expenses.filter((expense) => (expense.month || getMonthKeyForDate(expense.date)) !== selectedMonthKey);
   await saveState();
   render();
 });

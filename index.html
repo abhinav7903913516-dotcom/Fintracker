@@ -62,10 +62,10 @@
             </label>
 
             <label>
-              Owner
-              <select id="owner" name="owner">
-                <option value="You">You</option>
-                <option value="Spouse">Spouse</option>
+              Payer
+              <select id="payer" name="payer">
+                <option value="AK">AK</option>
+                <option value="Gracu">Gracu</option>
               </select>
             </label>
 
@@ -101,6 +101,10 @@
           <div class="progress-shell" aria-label="Budget progress">
             <div id="progressBar"></div>
           </div>
+          <label class="view-month-row" for="viewMonthSelect">
+            View month
+            <select id="viewMonthSelect"></select>
+          </label>
           <p id="budgetMessage" class="budget-message">Set a monthly budget to begin tracking.</p>
         </section>
       </main>
@@ -113,6 +117,9 @@
         <div class="dashboard-grid">
           <div class="dashboard-card">
             <h3>Spend by category</h3>
+            <div class="pie-chart-wrapper">
+              <div id="expensePieChart" class="pie-chart" aria-label="Expense pie chart"></div>
+            </div>
             <div id="categoryBreakdown" class="category-list"></div>
           </div>
           <div class="dashboard-card">
@@ -145,8 +152,8 @@
 
       <section class="panel list-panel">
         <div class="section-header">
-          <h2>This month's expenses</h2>
-          <button id="clearExpensesBtn" class="ghost" type="button">Clear month</button>
+          <h2>Selected month expenses</h2>
+          <button id="clearExpensesBtn" class="ghost" type="button">Clear selected month</button>
         </div>
         <div id="expenseList" class="expense-list"></div>
       </section>
