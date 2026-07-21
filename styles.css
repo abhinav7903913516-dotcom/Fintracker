@@ -330,6 +330,12 @@ form button {
   gap: 4px;
 }
 
+.expense-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .expense-title {
   font-weight: 600;
 }
@@ -352,10 +358,23 @@ form button {
   border-radius: 14px;
 }
 
+.edit-btn {
+  background: rgba(41, 182, 246, 0.16);
+  color: var(--accent);
+  padding: 8px 10px;
+}
+
 .delete-btn {
   background: rgba(255, 107, 107, 0.16);
   color: var(--danger);
   padding: 8px 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .hint {

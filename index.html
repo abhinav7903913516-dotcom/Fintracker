@@ -30,7 +30,7 @@
             <input id="budget" type="number" min="0" step="0.01" placeholder="0" />
             <button id="saveBudgetBtn" type="button">Set budget</button>
           </div>
-          <p class="hint">Your budget is saved locally in this browser.</p>
+          <p class="hint">Your budget and expenses are stored in a shared free backend so the app can stay synced across browsers.</p>
         </div>
       </header>
 
@@ -62,11 +62,22 @@
             </label>
 
             <label>
+              Owner
+              <select id="owner" name="owner">
+                <option value="You">You</option>
+                <option value="Spouse">Spouse</option>
+              </select>
+            </label>
+
+            <label>
               Date
               <input id="date" name="date" type="date" required />
             </label>
 
-            <button type="submit">Save expense</button>
+            <div class="form-actions">
+              <button id="saveExpenseBtn" type="submit">Save expense</button>
+              <button id="cancelEditBtn" class="ghost" type="button" style="display: none;">Cancel edit</button>
+            </div>
           </form>
         </section>
 
