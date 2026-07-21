@@ -28,6 +28,7 @@ const categoryBreakdown = document.getElementById('categoryBreakdown');
 const topCategory = document.getElementById('topCategory');
 const biggestExpense = document.getElementById('biggestExpense');
 const dailyAverage = document.getElementById('dailyAverage');
+const monthlyHistoryList = document.getElementById('monthlyHistoryList');
 
 function loadLocalState() {
   try {
@@ -262,6 +263,51 @@ function renderExpenses(items) {
     .join('');
 }
 
+function getMonthLabel(monthKey) {
+  const [year, month] = monthKey.split('-').map(Number);
+  return new Date(year, month - 1).toLocaleDateString('en-IN', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function getMonthlyHistory() {
+  const totalsByMonth = state.expenses.reduce((accumulator, expense) => {
+    const monthKey = expense.month || getMonthKeyForDate(expense.date);
+    accumulator[monthKey] = (accumulator[monthKey] || 0) + expense.amount;
+    return accumulator;
+  }, {});
+
+  return Object.entries(totalsByMonth)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([monthKey, total]) => ({
+      monthKey,
+      label: getMonthLabel(monthKey),
+      total,
+    }));
+}
+
+function renderMonthlyHistory() {
+  const history = getMonthlyHistory();
+
+  if (!history.length) {
+    monthlyHistoryList.innerHTML = '<div class="empty-state">No monthly history yet.</div>';
+    return;
+  }
+
+  monthlyHistoryList.innerHTML = history
+    .map(({ monthKey, label, total }) => `
+      <article class="history-item">
+        <div>
+          <strong>${label}</strong>
+          <span>${monthKey === getCurrentMonthKey() ? 'Current month' : 'Recorded month'}</span>
+        </div>
+        <strong>${formatCurrency(total)}</strong>
+      </article>
+    `)
+    .join('');
+}
+
 function renderDashboard(monthExpenses, spent) {
   const totalsByCategory = monthExpenses.reduce((accumulator, expense) => {
     accumulator[expense.category] = (accumulator[expense.category] || 0) + expense.amount;
@@ -356,6 +402,7 @@ function render() {
   budgetInput.value = state.budget || '';
   renderSummary();
   renderExpenses(getCurrentMonthExpenses());
+  renderMonthlyHistory();
 }
 
 saveBudgetBtn.addEventListener('click', async () => {

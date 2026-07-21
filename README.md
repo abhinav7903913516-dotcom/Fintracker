@@ -1,4 +1,4 @@
-# Fintracker
+# AK Gracu Budget Tracker
 
 A simple personal budget tracker built with HTML, CSS, and JavaScript.
 
